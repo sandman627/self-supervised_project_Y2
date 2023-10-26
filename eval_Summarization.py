@@ -1,3 +1,4 @@
+import os
 import pickle
 from tqdm import tqdm
 
@@ -11,7 +12,6 @@ Summarization:
     dataset: CNN/DM
     metric: average three ROUGE scores (ROUGE-1, ROUGE-2, ROUGE-L)
 '''
-
 
 # Dataset
 dataset = load_dataset("cnn_dailymail", '3.0.0')
@@ -27,36 +27,19 @@ model = AutoModelForCausalLM.from_pretrained(model_name_or_path,
                                              revision="main")
 tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, use_fast=True)
 
-prompt = "Tell me about AI"
-prompt_template=f'''{prompt}
-
-'''
-
-print("\n\n*** Generate:")
-
-input_ids = tokenizer(prompt_template, return_tensors='pt').input_ids.cuda()
-output = model.generate(inputs=input_ids, temperature=0.7, do_sample=True, top_p=0.95, top_k=40, max_new_tokens=512)
-print(tokenizer.decode(output[0]))
-
-# Inference can also be done using transformers' pipeline
-
-print("*** Pipeline:")
-pipe = pipeline(
-    "summarization",
-    model=model,
-    tokenizer=tokenizer,
-    max_new_tokens=512,
-    do_sample=True,
-    temperature=0.7,
-    top_p=0.95,
-    top_k=40,
-    repetition_penalty=1.1
-)
-
-print(pipe(prompt_template)[0]['generated_text'])
+def summerizer(input_text):
+    prompt = "Summarize the Following content in less than 120 words."
+    prompt_template=f"{prompt}{input_text}"
+    
+    input_ids = tokenizer(prompt_template, return_tensors='pt').input_ids.cuda()
+    output = model.generate(inputs=input_ids, temperature=0.7, do_sample=True, top_p=0.95, top_k=40, max_new_tokens=512)
+    
+    print(tokenizer.decode(output[0]))
+    return tokenizer.decode(output[0])
 
 
 
+# Run Evaluation
 max_words = 0
 max_length = 0
 
@@ -80,7 +63,7 @@ for data in tqdm(dataset['test']):
         max_length = n_length
 
     try:
-        summary = pipe(article)
+        summary = summerizer(article)
         dataset_summaries.append(data_hightlight)
         model_summaries.append(summary)
     except:
@@ -90,7 +73,7 @@ for data in tqdm(dataset['test']):
     test_case_num += 1
     # if test_case_num == 100:
     #     break
-    # break
+    break
 
 print("max words : ", max_words)
 print("max length : ", max_length)
@@ -102,3 +85,6 @@ for key, value in rouge_scores.items():
 print("Skipped Cases : ", skipped_case_nums)
 print("num of Skipped Cases : ", skipped_num)
 
+
+if __name__ == "__main__":
+    print("Testing : ", os.path.basename(__file__)) 

@@ -25,10 +25,6 @@ len(metrics_list)
 print("Metric List: ", len(metrics_list))
 print(metrics_list)
 
-metric = evaluate.load('f1')
-
-exit()
-
 
 
 model_name_or_path = "TheBloke/Llama-2-70B-GPTQ"

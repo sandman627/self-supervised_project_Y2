@@ -1,3 +1,5 @@
+import os
+
 from datasets import load_dataset
 import evaluate
 from evaluate import evaluator
@@ -38,7 +40,7 @@ print(tokenizer.decode(output[0]))
 
 print("*** Pipeline:")
 pipe = pipeline(
-    "text-generation",
+    "translation_en_to_ge",
     model=model,
     tokenizer=tokenizer,
     max_new_tokens=512,
@@ -50,3 +52,7 @@ pipe = pipeline(
 )
 
 print(pipe(prompt_template)[0]['generated_text'])
+
+
+if __name__ == "__main__":
+    print("Testing : ", os.path.basename(__file__)) 

@@ -1,3 +1,4 @@
+import os
 import pickle
 from tqdm import tqdm
 
@@ -40,8 +41,6 @@ input_ids = tokenizer(prompt_template, return_tensors='pt').input_ids.cuda()
 output = model.generate(inputs=input_ids, temperature=0.7, do_sample=True, top_p=0.95, top_k=40, max_new_tokens=512)
 print(tokenizer.decode(output[0]))
 
-# Inference can also be done using transformers' pipeline
-
 print("*** Pipeline:")
 pipe = pipeline(
     "question-answering",
@@ -55,9 +54,8 @@ pipe = pipeline(
     repetition_penalty=1.1
 )
 
-print(pipe(prompt_template)[0]['generated_text'])
 
-
+# Run Evaluation
 episode_num = 0
 dataset_answers = []
 model_answers = []
@@ -95,3 +93,7 @@ for data in tqdm(qa_srl_dataset):
 
 # print(em_metric.compute(predictions=model_answers, references=dataset_answers))
 print(squad_metric.compute(predictions=model_predictions, references=dataset_references))
+
+
+if __name__ == "__main__":
+    print("Testing : ", os.path.basename(__file__)) 
