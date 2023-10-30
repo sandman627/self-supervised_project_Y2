@@ -1,5 +1,7 @@
 import os
 
+from tqdm import tqdm
+
 from datasets import load_dataset
 import evaluate
 from evaluate import evaluator
@@ -12,10 +14,10 @@ Machine Translation:
 '''
 
 # Dataset
-
+dataset = load_dataset()
 
 # Metric
-
+bleu_metric = evaluate.load('bleu')
 
 # Model
 model_name_or_path = "TheBloke/Llama-2-70B-GPTQ"
@@ -25,33 +27,39 @@ model = AutoModelForCausalLM.from_pretrained(model_name_or_path,
                                              revision="main")
 tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, use_fast=True)
 
-prompt = "Tell me about AI"
-prompt_template=f'''{prompt}
+def pipe(question, context):
+    prompt_template=f'''
+    Context: {context}\n
+    Question: Fill in the blank of given sentence. {question}\n
+    Answer: 
+    '''
+    prompt_len = len(prompt_template)
+    
+    input_ids = tokenizer(prompt_template, return_tensors='pt').input_ids.cuda()
+    output_ids = model.generate(inputs=input_ids, temperature=0.7, do_sample=True, top_p=0.95, top_k=40, max_new_tokens=512)
+    # print(f"output ids: {type(output_ids)}\n{output_ids}\n\n\n\n")
+    output = tokenizer.decode(output_ids[0])
+    output_without_prompt = output[prompt_len:]
+    # print(f"output : \n{output}\n\n\n\n")
+    # print(f"output summary : \n{output_only_summary}\n\n\n\n")
+    return output_without_prompt
 
-'''
+# Run Evaluation
 
-print("\n\n*** Generate:")
+episode_num = 0
+predictions = []
+references = []
+for data in tqdm(dataset['test']):
+    
+    references.append(data['label'])
+    
+    predictions.append()
+    
+bleu_score = bleu_metric.compute(predictions=predictions, references=references)
+print(bleu_score)
 
-input_ids = tokenizer(prompt_template, return_tensors='pt').input_ids.cuda()
-output = model.generate(inputs=input_ids, temperature=0.7, do_sample=True, top_p=0.95, top_k=40, max_new_tokens=512)
-print(tokenizer.decode(output[0]))
 
-# Inference can also be done using transformers' pipeline
 
-print("*** Pipeline:")
-pipe = pipeline(
-    "translation_en_to_ge",
-    model=model,
-    tokenizer=tokenizer,
-    max_new_tokens=512,
-    do_sample=True,
-    temperature=0.7,
-    top_p=0.95,
-    top_k=40,
-    repetition_penalty=1.1
-)
-
-print(pipe(prompt_template)[0]['generated_text'])
 
 
 if __name__ == "__main__":

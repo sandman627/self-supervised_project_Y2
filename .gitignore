@@ -1,5 +1,8 @@
 # Virtual Environment
 .venv38
 
+# other git repos
+QASem
+
 # Data
 data
